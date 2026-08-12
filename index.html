@@ -30,9 +30,10 @@
   --border-2:    rgba(255,255,255,0.11);
   --accent:      #38bdf8;
   --accent-dim:  rgba(56,189,248,0.10);
-  --accent-glow: rgba(56,189,248,0.20);
   --done:        #4ade80;
   --done-dim:    rgba(74,222,128,0.09);
+  --amber:       #fbbf24;
+  --amber-dim:   rgba(251,191,36,0.12);
   --danger:      #f87171;
   --danger-dim:  rgba(248,113,113,0.10);
   --text-1:      #e2e8f0;
@@ -40,9 +41,7 @@
   --text-3:      #3d5068;
   --radius:      18px;
   --radius-sm:   12px;
-  --radius-xs:   8px;
   --font:        'Outfit', system-ui, sans-serif;
-  --shadow:      0 8px 32px rgba(0,0,0,0.45);
 }
 
 html {
@@ -67,7 +66,7 @@ body {
   top: 0;
   z-index: 50;
   padding: 20px 0 0;
-  background: linear-gradient(to bottom, var(--bg) 80%, transparent);
+  background: linear-gradient(to bottom, var(--bg) 82%, transparent);
 }
 
 .brand-row {
@@ -85,12 +84,59 @@ body {
   color: var(--accent);
 }
 
-.today-badge {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-3);
-  letter-spacing: 0.05em;
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
+
+/* Small icon buttons in header */
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border-2);
+  background: var(--surface);
+  color: var(--text-2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.12s;
+  flex-shrink: 0;
+}
+.icon-btn:hover  { background: var(--surface-2); color: var(--text-1); }
+.icon-btn:active { transform: scale(0.88); }
+
+/* Lock button: amber when unlocked to signal "edit mode is on" */
+.icon-btn.unlocked {
+  color: var(--amber);
+  border-color: rgba(251,191,36,0.3);
+  background: var(--amber-dim);
+}
+
+/* Calc button: accent when active */
+.icon-btn.selecting {
+  color: var(--accent);
+  border-color: rgba(56,189,248,0.3);
+  background: var(--accent-dim);
+}
+
+/* Unlock banner */
+.unlock-banner {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  background: var(--amber-dim);
+  border: 1px solid rgba(251,191,36,0.2);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  margin-bottom: 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--amber);
+}
+.unlock-banner.visible { display: flex; }
 
 .month-nav {
   display: flex;
@@ -100,10 +146,7 @@ body {
   margin-bottom: 18px;
 }
 
-.month-display {
-  flex: 1;
-  text-align: center;
-}
+.month-display { flex: 1; text-align: center; }
 
 .month-label {
   font-size: 26px;
@@ -124,11 +167,10 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.12s;
+  transition: background 0.18s, color 0.18s, transform 0.12s;
   flex-shrink: 0;
 }
-
-.nav-btn:hover { background: var(--surface-2); color: var(--text-1); border-color: var(--border-2); }
+.nav-btn:hover  { background: var(--surface-2); color: var(--text-1); }
 .nav-btn:active { transform: scale(0.92); }
 
 /* Progress bar */
@@ -139,7 +181,6 @@ body {
   margin-bottom: 16px;
   overflow: hidden;
 }
-
 .progress-fill {
   height: 100%;
   background: linear-gradient(90deg, var(--accent), var(--done));
@@ -152,8 +193,15 @@ body {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
-  margin-bottom: 24px;
-  padding-bottom: 24px;
+  margin-bottom: 8px;
+}
+
+.stats-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -163,21 +211,18 @@ body {
   border-radius: var(--radius-sm);
   padding: 14px 10px;
   text-align: center;
-  transition: border-color 0.2s;
 }
 
-.stat-card:hover { border-color: var(--border-2); }
-
 .stat-value {
-  font-size: 26px;
+  font-size: 24px;
   font-weight: 800;
   line-height: 1;
   margin-bottom: 5px;
   letter-spacing: -0.5px;
 }
-
 .stat-value.accent { color: var(--accent); }
 .stat-value.done   { color: var(--done);   }
+.stat-value.amber  { color: var(--amber);  }
 .stat-value.plain  { color: var(--text-1); }
 
 .stat-label {
@@ -189,90 +234,73 @@ body {
 }
 
 /* ---- ENTRY LIST ---- */
-.section-label {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--text-3);
-  margin-bottom: 10px;
-  margin-top: 4px;
-}
+.entry-list { display: flex; flex-direction: column; gap: 8px; }
 
-.entry-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-/* Empty state */
-.empty-state {
-  padding: 64px 20px;
-  text-align: center;
-  color: var(--text-3);
-}
-
-.empty-icon {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 16px;
-  opacity: 0.35;
-}
-
-.empty-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-2);
-  margin-bottom: 6px;
-}
-
-.empty-sub {
-  font-size: 13px;
-  color: var(--text-3);
-}
+.empty-state { padding: 64px 20px; text-align: center; }
+.empty-icon  { display: flex; justify-content: center; margin-bottom: 16px; opacity: 0.3; }
+.empty-title { font-size: 16px; font-weight: 600; color: var(--text-2); margin-bottom: 6px; }
+.empty-sub   { font-size: 13px; color: var(--text-3); }
 
 /* ---- ENTRY CARD ---- */
 .entry-card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 14px 14px 14px 14px;
+  padding: 14px;
   display: grid;
   grid-template-columns: 58px 1fr 44px;
   gap: 12px;
   align-items: center;
-  cursor: pointer;
   position: relative;
   transition: background 0.18s, border-color 0.18s, transform 0.12s;
   animation: cardIn 0.22s ease both;
+  /* Locked by default: not interactive */
+  cursor: default;
+  user-select: none;
 }
 
 @keyframes cardIn {
   from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0);   }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .entry-card { animation: none; }
-  .progress-fill { transition: none; }
-  .nav-btn, .check-btn, .fab { transition: none; }
+/* Editable state (unlocked) */
+.entry-card.editable {
+  cursor: pointer;
 }
-
-.entry-card:hover {
+.entry-card.editable:hover {
   background: var(--surface-2);
   border-color: var(--border-2);
 }
+.entry-card.editable:active { transform: scale(0.99); }
 
-.entry-card:active { transform: scale(0.99); }
+/* Selectable state (calc mode) */
+.entry-card.selectable { cursor: pointer; }
+.entry-card.selectable:hover { background: var(--surface-2); border-color: var(--border-2); }
+.entry-card.selectable:active { transform: scale(0.99); }
+
+.entry-card.card-selected {
+  border-color: rgba(56,189,248,0.35);
+  background: rgba(56,189,248,0.06);
+}
 
 .entry-card.completed {
   border-color: rgba(74,222,128,0.13);
   background: rgba(74,222,128,0.03);
 }
+.entry-card.card-selected.completed {
+  border-color: rgba(56,189,248,0.35);
+  background: rgba(56,189,248,0.07);
+}
 
 .entry-card.is-today {
   border-color: rgba(56,189,248,0.22);
   background: rgba(56,189,248,0.04);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entry-card  { animation: none; }
+  .progress-fill { transition: none; }
 }
 
 /* Date bubble */
@@ -288,17 +316,33 @@ body {
   justify-content: center;
   transition: background 0.2s, border-color 0.2s;
   flex-shrink: 0;
+  position: relative;
 }
 
 .entry-card.completed .date-bubble {
   background: var(--done-dim);
   border-color: rgba(74,222,128,0.18);
 }
-
 .entry-card.is-today .date-bubble {
   background: var(--accent-dim);
   border-color: rgba(56,189,248,0.25);
 }
+.entry-card.card-selected .date-bubble {
+  background: var(--accent-dim);
+  border-color: rgba(56,189,248,0.4);
+}
+
+/* Selection tick overlay on date bubble */
+.select-tick {
+  display: none;
+  position: absolute;
+  inset: 0;
+  border-radius: 11px;
+  background: rgba(56,189,248,0.15);
+  align-items: center;
+  justify-content: center;
+}
+.entry-card.card-selected .select-tick { display: flex; }
 
 .date-num {
   font-size: 24px;
@@ -307,9 +351,9 @@ body {
   color: var(--text-1);
   letter-spacing: -0.5px;
 }
-
-.entry-card.completed .date-num { color: var(--done); }
-.entry-card.is-today .date-num  { color: var(--accent); }
+.entry-card.completed .date-num  { color: var(--done); }
+.entry-card.is-today  .date-num  { color: var(--accent); }
+.entry-card.card-selected .date-num { color: var(--accent); }
 
 .date-wd {
   font-size: 10px;
@@ -319,9 +363,9 @@ body {
   color: var(--text-3);
   margin-top: 3px;
 }
-
-.entry-card.completed .date-wd { color: rgba(74,222,128,0.45); }
-.entry-card.is-today  .date-wd { color: rgba(56,189,248,0.55); }
+.entry-card.completed .date-wd   { color: rgba(74,222,128,0.45); }
+.entry-card.is-today  .date-wd   { color: rgba(56,189,248,0.55); }
+.entry-card.card-selected .date-wd { color: rgba(56,189,248,0.6); }
 
 /* Entry body */
 .entry-body { min-width: 0; }
@@ -336,7 +380,6 @@ body {
   line-height: 1.2;
   margin-bottom: 3px;
 }
-
 .entry-card.completed .entry-company { color: var(--text-2); }
 
 .entry-role {
@@ -346,9 +389,8 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 5px;
+  margin-bottom: 4px;
 }
-
 .entry-card.completed .entry-role { color: var(--text-3); }
 
 .entry-meta {
@@ -366,7 +408,31 @@ body {
   flex: 1;
 }
 
-/* Check button */
+/* Earnings row on card */
+.entry-earn {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 5px;
+}
+.earn-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+  background: var(--surface-3);
+  border-radius: 6px;
+  padding: 2px 7px;
+}
+.earn-chip.earn-total {
+  color: var(--done);
+  background: var(--done-dim);
+}
+
+/* Check / select button */
 .check-btn {
   width: 36px;
   height: 36px;
@@ -382,15 +448,8 @@ body {
   flex-shrink: 0;
   align-self: center;
 }
-
-.check-btn:hover {
-  border-color: var(--done);
-  color: var(--done);
-  background: var(--done-dim);
-}
-
+.check-btn:hover  { border-color: var(--done); color: var(--done); background: var(--done-dim); }
 .check-btn:active { transform: scale(0.88); }
-
 .entry-card.completed .check-btn {
   border-color: var(--done);
   color: var(--done);
@@ -428,16 +487,68 @@ body {
   align-items: center;
   justify-content: center;
   box-shadow: 0 6px 28px rgba(56,189,248,0.38);
-  transition: transform 0.18s, box-shadow 0.18s;
+  transition: transform 0.18s, box-shadow 0.18s, opacity 0.18s;
   z-index: 100;
 }
-
-.fab:hover {
-  transform: scale(1.07);
-  box-shadow: 0 10px 36px rgba(56,189,248,0.50);
-}
-
+.fab:hover  { transform: scale(1.07); box-shadow: 0 10px 36px rgba(56,189,248,0.50); }
 .fab:active { transform: scale(0.93); }
+.fab.hidden { opacity: 0; pointer-events: none; transform: scale(0.8); }
+
+/* ---- CALC BAR (selection mode bottom bar) ---- */
+.calc-bar {
+  position: fixed;
+  left: 0; right: 0;
+  bottom: 0;
+  z-index: 110;
+  background: var(--surface-2);
+  border-top: 1px solid var(--border-2);
+  padding: 14px 20px calc(14px + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transform: translateY(110%);
+  transition: transform 0.3s cubic-bezier(0.16,1,0.3,1);
+  max-width: 640px;
+  margin: 0 auto;
+}
+.calc-bar.open { transform: translateY(0); }
+
+.calc-bar-info { flex: 1; min-width: 0; }
+.calc-bar-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--text-3);
+  margin-bottom: 4px;
+}
+.calc-bar-total {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--done);
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+.calc-bar-sub {
+  font-size: 12px;
+  color: var(--text-2);
+  margin-top: 3px;
+}
+.calc-bar-cancel {
+  padding: 10px 18px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-2);
+  background: var(--surface-3);
+  color: var(--text-2);
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.15s, background 0.15s;
+}
+.calc-bar-cancel:hover { color: var(--text-1); }
+.calc-bar-cancel:active { transform: scale(0.96); }
 
 /* ---- MODAL ---- */
 .overlay {
@@ -454,11 +565,7 @@ body {
   pointer-events: none;
   transition: opacity 0.22s ease;
 }
-
-.overlay.open {
-  opacity: 1;
-  pointer-events: all;
-}
+.overlay.open { opacity: 1; pointer-events: all; }
 
 .modal {
   background: var(--surface-2);
@@ -473,10 +580,7 @@ body {
   transition: transform 0.32s cubic-bezier(0.16,1,0.3,1);
   overscroll-behavior: contain;
 }
-
-.overlay.open .modal {
-  transform: translateY(0);
-}
+.overlay.open .modal { transform: translateY(0); }
 
 .modal-handle {
   width: 40px;
@@ -522,16 +626,14 @@ body {
   -webkit-appearance: none;
   appearance: none;
 }
-
 .form-input:focus { border-color: var(--accent); }
-
 .form-input::placeholder { color: var(--text-3); }
 
-/* Color scheme for date input on webkit */
 input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(0.5);
-  cursor: pointer;
+  filter: invert(0.5); cursor: pointer;
 }
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button { opacity: 0.4; }
 
 .form-row {
   display: grid;
@@ -539,11 +641,21 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   gap: 10px;
 }
 
-.modal-actions {
+/* Earn preview in modal */
+.earn-preview {
+  background: var(--surface-3);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
   display: flex;
-  gap: 10px;
-  margin-top: 20px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
 }
+.earn-preview-label { font-size: 12px; color: var(--text-3); font-weight: 600; }
+.earn-preview-value { font-size: 20px; font-weight: 800; color: var(--done); letter-spacing: -0.3px; }
+
+.modal-actions { display: flex; gap: 10px; margin-top: 20px; }
 
 .btn {
   flex: 1;
@@ -556,14 +668,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
   transition: opacity 0.15s, transform 0.12s;
 }
-
 .btn:active { transform: scale(0.97); }
 
-.btn-primary {
-  background: var(--accent);
-  color: #0a0e1a;
-}
-
+.btn-primary { background: var(--accent); color: #0a0e1a; }
 .btn-primary:hover { opacity: 0.88; }
 
 .btn-ghost {
@@ -571,8 +678,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   color: var(--text-2);
   border: 1px solid var(--border-2);
 }
-
-.btn-ghost:hover { color: var(--text-1); background: var(--surface-3); opacity: 0.85; }
+.btn-ghost:hover { color: var(--text-1); opacity: 0.85; }
 
 .btn-danger {
   width: 100%;
@@ -582,7 +688,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   border: 1px solid rgba(248,113,113,0.18);
   flex: none;
 }
-
 .btn-danger:hover { background: rgba(248,113,113,0.16); }
 
 /* Scroll */
@@ -594,7 +699,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 @media (max-width: 420px) {
   body { padding: 0 12px calc(90px + env(safe-area-inset-bottom)); }
   .month-label { font-size: 22px; }
-  .stat-value  { font-size: 22px; }
+  .stat-value  { font-size: 20px; }
   .modal       { padding: 12px 14px calc(28px + env(safe-area-inset-bottom)); }
   .entry-card  { grid-template-columns: 52px 1fr 40px; gap: 10px; padding: 12px; }
   .date-bubble { width: 52px; height: 58px; }
@@ -604,6 +709,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 @media (min-width: 641px) {
   .fab { right: calc(50% - 320px + 24px); }
+  .calc-bar { left: calc(50% - 320px); right: calc(50% - 320px); }
 }
 </style>
 </head>
@@ -613,7 +719,39 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 <div class="app-header">
   <div class="brand-row">
     <span class="brand-name">Shifts</span>
-    <span class="today-badge" id="todayBadge"></span>
+    <div class="header-actions">
+      <!-- Calc / select button -->
+      <button class="icon-btn" id="calcBtn" aria-label="Select shifts to calculate" title="Select shifts to calculate">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <rect x="2" y="2" width="5" height="4" rx="1.2" fill="currentColor" opacity=".7"/>
+          <rect x="9" y="2" width="5" height="4" rx="1.2" fill="currentColor" opacity=".7"/>
+          <rect x="2" y="10" width="5" height="4" rx="1.2" fill="currentColor" opacity=".7"/>
+          <rect x="9" y="10" width="5" height="4" rx="1.2" fill="currentColor" opacity=".7"/>
+        </svg>
+      </button>
+      <!-- Lock / unlock button -->
+      <button class="icon-btn" id="lockBtn" aria-label="Unlock to edit" title="Unlock to edit">
+        <!-- Locked padlock (default) -->
+        <svg id="lockIcon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <rect x="4" y="7" width="8" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6"/>
+          <path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+        <!-- Open padlock (unlocked) -->
+        <svg id="unlockIcon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" style="display:none">
+          <rect x="4" y="7" width="8" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6"/>
+          <path d="M5.5 7V5a2.5 2.5 0 0 1 5 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Unlock banner -->
+  <div class="unlock-banner" id="unlockBanner" aria-live="polite">
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <rect x="4" y="7" width="8" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6"/>
+      <path d="M5.5 7V5a2.5 2.5 0 0 1 5 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    </svg>
+    Edit mode on - tap a shift to change it
   </div>
 
   <div class="month-nav">
@@ -636,6 +774,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     <div class="progress-fill" id="progressFill" style="width:0%"></div>
   </div>
 
+  <!-- Stats row 1 -->
   <div class="stats-row">
     <div class="stat-card">
       <div class="stat-value accent" id="statTotal">0</div>
@@ -650,17 +789,39 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       <div class="stat-label">Upcoming</div>
     </div>
   </div>
+
+  <!-- Stats row 2: hours + earnings -->
+  <div class="stats-row-2">
+    <div class="stat-card">
+      <div class="stat-value plain" id="statHours">0h</div>
+      <div class="stat-label">Month Hours</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value amber" id="statEarned">€0</div>
+      <div class="stat-label">Month Earned</div>
+    </div>
+  </div>
 </div>
 
 <!-- ======= ENTRY LIST ======= -->
 <div class="entry-list" id="entryList" role="list"></div>
 
 <!-- ======= FAB ======= -->
-<button class="fab" id="fabBtn" aria-label="Add a shift">
+<button class="fab hidden" id="fabBtn" aria-label="Add a shift">
   <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
     <path d="M11 3v16M3 11h16" stroke="#0a0e1a" stroke-width="2.4" stroke-linecap="round"/>
   </svg>
 </button>
+
+<!-- ======= CALC BAR ======= -->
+<div class="calc-bar" id="calcBar" role="status" aria-live="polite">
+  <div class="calc-bar-info">
+    <div class="calc-bar-label" id="calcBarLabel">0 shifts selected</div>
+    <div class="calc-bar-total" id="calcBarTotal">€0.00</div>
+    <div class="calc-bar-sub" id="calcBarSub">0h total</div>
+  </div>
+  <button class="calc-bar-cancel" id="calcCancelBtn">Done</button>
+</div>
 
 <!-- ======= MODAL ======= -->
 <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
@@ -690,9 +851,27 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         <input class="form-input" type="text" id="fAddress" placeholder="Work site address" maxlength="100">
       </div>
 
+      <!-- Hours + Rate -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="fHours">Hours Worked</label>
+          <input class="form-input" type="number" id="fHours" placeholder="0" min="0" max="24" step="0.5">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="fRate">Rate (€/hr)</label>
+          <input class="form-input" type="number" id="fRate" placeholder="0.00" min="0" step="0.01">
+        </div>
+      </div>
+
+      <!-- Live earn preview -->
+      <div class="earn-preview" id="earnPreview" style="display:none">
+        <span class="earn-preview-label">Shift earnings</span>
+        <span class="earn-preview-value" id="earnPreviewVal">€0.00</span>
+      </div>
+
       <div class="form-group">
         <label class="form-label" for="fNotes">Notes</label>
-        <input class="form-input" type="text" id="fNotes" placeholder="Anything else (hours, contact, etc.)" maxlength="120">
+        <input class="form-input" type="text" id="fNotes" placeholder="Optional notes" maxlength="120">
       </div>
 
       <div class="modal-actions">
@@ -719,18 +898,15 @@ const MONTHS      = ['January','February','March','April','May','June',
                      'July','August','September','October','November','December'];
 
 // ---- State ----
-let currentYM  = todayYM();
-let editingId  = null;
+let currentYM   = todayYM();
+let editingId   = null;
+let isLocked    = true;
+let isSelecting = false;
+let selectedIds = new Set();
 
 // ---- Helpers ----
-function todayStr() {
-  const d = new Date();
-  return d.toISOString().slice(0,10);
-}
-
-function todayYM() {
-  return todayStr().slice(0,7);
-}
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+function todayYM()  { return todayStr().slice(0, 7); }
 
 function ymLabel(ym) {
   const parts = (ym || '').split('-');
@@ -741,23 +917,32 @@ function ymLabel(ym) {
 }
 
 function shiftYM(ym, delta) {
-  let [y,m] = ym.split('-').map(Number);
+  let [y, m] = ym.split('-').map(Number);
   m += delta;
   if (m > 12) { m = 1;  y++; }
   if (m <  1) { m = 12; y--; }
-  return y + '-' + String(m).padStart(2,'0');
+  return y + '-' + String(m).padStart(2, '0');
 }
 
-function uid() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2,5);
-}
-
+function uid()  { return Date.now().toString(36) + Math.random().toString(36).slice(2, 5); }
 function esc(s) {
   return String(s)
-    .replace(/&/g,'&amp;')
-    .replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;');
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function fmtEur(n) {
+  return '€' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+function fmtHours(h) {
+  return h % 1 === 0 ? h + 'h' : h + 'h';
+}
+
+function entryEarnings(entry) {
+  const h = parseFloat(entry.hours) || 0;
+  const r = parseFloat(entry.rate)  || 0;
+  return h * r;
 }
 
 // ---- Storage ----
@@ -765,7 +950,6 @@ function load() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
   catch { return []; }
 }
-
 function save(entries) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
 }
@@ -774,29 +958,49 @@ function save(entries) {
 function render() {
   const all      = load();
   const filtered = all.filter(e => e.date.startsWith(currentYM))
-                      .sort((a,b) => a.date.localeCompare(b.date));
+                      .sort((a, b) => a.date.localeCompare(b.date));
   const today    = todayStr();
 
   // Header
   document.getElementById('monthLabel').textContent = ymLabel(currentYM);
 
-  const d    = new Date();
-  const opts = { weekday:'short', month:'short', day:'numeric' };
-  document.getElementById('todayBadge').textContent =
-    d.toLocaleDateString('en-AU', opts);
-
-  // Stats
+  // Stats row 1
   const total = filtered.length;
   const done  = filtered.filter(e => e.completed).length;
-  const left  = total - done;
   const pct   = total > 0 ? Math.round((done / total) * 100) : 0;
-
   document.getElementById('statTotal').textContent = total;
   document.getElementById('statDone').textContent  = done;
-  document.getElementById('statLeft').textContent  = left;
+  document.getElementById('statLeft').textContent  = total - done;
   document.getElementById('progressFill').style.width = pct + '%';
 
-  // List
+  // Stats row 2
+  const totalHours   = filtered.reduce((s, e) => s + (parseFloat(e.hours) || 0), 0);
+  const totalEarned  = filtered.reduce((s, e) => s + entryEarnings(e), 0);
+  document.getElementById('statHours').textContent  = totalHours > 0 ? fmtHours(totalHours) : '0h';
+  document.getElementById('statEarned').textContent = totalEarned > 0 ? fmtEur(totalEarned) : '€0';
+
+  // FAB: only show when unlocked and not in select mode
+  const fab = document.getElementById('fabBtn');
+  fab.classList.toggle('hidden', isLocked || isSelecting);
+
+  // Lock button visual
+  const lockBtn    = document.getElementById('lockBtn');
+  const lockIcon   = document.getElementById('lockIcon');
+  const unlockIcon = document.getElementById('unlockIcon');
+  const banner     = document.getElementById('unlockBanner');
+  lockBtn.classList.toggle('unlocked', !isLocked);
+  lockIcon.style.display   = isLocked   ? '' : 'none';
+  unlockIcon.style.display = isLocked   ? 'none' : '';
+  lockBtn.title    = isLocked ? 'Unlock to edit' : 'Lock (editing on)';
+  banner.classList.toggle('visible', !isLocked);
+
+  // Calc button visual
+  document.getElementById('calcBtn').classList.toggle('selecting', isSelecting);
+
+  // Update calc bar
+  updateCalcBar();
+
+  // Entry list
   const list = document.getElementById('entryList');
   list.innerHTML = '';
 
@@ -812,7 +1016,7 @@ function render() {
           </svg>
         </div>
         <div class="empty-title">No shifts for ${ymLabel(currentYM)}</div>
-        <div class="empty-sub">Tap the + button to add your first shift</div>
+        <div class="empty-sub">${isLocked ? 'Tap the lock icon to unlock and add shifts' : 'Tap + to add your first shift'}</div>
       </div>`;
     return;
   }
@@ -822,18 +1026,44 @@ function render() {
     const dateObj  = new Date(entry.date + 'T12:00:00');
     const wd       = WEEKDAYS[dateObj.getDay()];
     const isToday  = entry.date === today;
+    const isSel    = selectedIds.has(entry.id);
+
+    const h = parseFloat(entry.hours) || 0;
+    const r = parseFloat(entry.rate)  || 0;
+    const earn = h * r;
+
+    // Build earn chips
+    let earnHTML = '';
+    if (h > 0 || r > 0) {
+      earnHTML = '<div class="entry-earn">';
+      if (h > 0) earnHTML += `<span class="earn-chip"><svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.3"/><path d="M6 3.5v2.5l1.5 1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>${fmtHours(h)}</span>`;
+      if (r > 0) earnHTML += `<span class="earn-chip">€${r.toFixed(2)}/h</span>`;
+      if (h > 0 && r > 0) earnHTML += `<span class="earn-chip earn-total">${fmtEur(earn)}</span>`;
+      earnHTML += '</div>';
+    }
+
+    let classes = 'entry-card';
+    if (entry.completed) classes += ' completed';
+    if (isToday)         classes += ' is-today';
+    if (isSel)           classes += ' card-selected';
+    if (isSelecting)     classes += ' selectable';
+    else if (!isLocked)  classes += ' editable';
 
     const card = document.createElement('div');
-    card.className = 'entry-card' +
-      (entry.completed ? ' completed' : '') +
-      (isToday         ? ' is-today'  : '');
+    card.className = classes;
     card.setAttribute('role', 'listitem');
     card.style.animationDelay = (i * 0.04) + 's';
+    card.dataset.id = entry.id;
 
     card.innerHTML = `
       <div class="date-bubble" aria-hidden="true">
-        <span class="date-num">${parseInt(day,10)}</span>
+        <span class="date-num">${parseInt(day, 10)}</span>
         <span class="date-wd">${wd}</span>
+        <div class="select-tick">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M3 7l3 3 5-5" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
       </div>
       <div class="entry-body">
         <div class="entry-company">
@@ -846,36 +1076,55 @@ function render() {
               <path d="M6 1a3.5 3.5 0 0 0-3.5 3.5C2.5 7.5 6 11 6 11s3.5-3.5 3.5-6.5A3.5 3.5 0 0 0 6 1zm0 4.75a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z" fill="#3d5068"/>
             </svg>
             <span class="entry-address">${esc(entry.address)}</span>
-          ` : ''}
-          ${entry.notes && !entry.address ? `
-            <span class="entry-address" style="font-style:italic;">${esc(entry.notes)}</span>
-          ` : ''}
+          ` : (entry.notes ? `<span class="entry-address" style="font-style:italic">${esc(entry.notes)}</span>` : '')}
         </div>
+        ${earnHTML}
       </div>
       <button class="check-btn"
               data-id="${entry.id}"
-              aria-label="${entry.completed ? 'Mark as incomplete' : 'Mark as done'}">
+              aria-label="${entry.completed ? 'Mark incomplete' : 'Mark done'}">
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
           <path d="M2.5 7.5l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
     `;
 
+    // Card click: edit (unlocked) or select (selecting)
     card.addEventListener('click', e => {
       if (e.target.closest('.check-btn')) return;
-      openModal(entry.id);
+      if (isSelecting) { toggleCardSelect(entry.id); return; }
+      if (!isLocked)   { openModal(entry.id); }
     });
 
     list.appendChild(card);
   });
 
-  // Attach check buttons
+  // Check buttons - always active regardless of lock
   list.querySelectorAll('.check-btn').forEach(btn => {
     btn.addEventListener('click', e => {
       e.stopPropagation();
       toggleDone(btn.dataset.id);
     });
   });
+}
+
+// ---- Update calc bar ----
+function updateCalcBar() {
+  const bar = document.getElementById('calcBar');
+  bar.classList.toggle('open', isSelecting);
+
+  if (!isSelecting) return;
+
+  const all = load();
+  const sel = all.filter(e => selectedIds.has(e.id));
+  const selH = sel.reduce((s, e) => s + (parseFloat(e.hours) || 0), 0);
+  const selE = sel.reduce((s, e) => s + entryEarnings(e), 0);
+
+  const count = sel.length;
+  document.getElementById('calcBarLabel').textContent =
+    count === 0 ? 'Tap shifts to select' : count + (count === 1 ? ' shift selected' : ' shifts selected');
+  document.getElementById('calcBarTotal').textContent = fmtEur(selE);
+  document.getElementById('calcBarSub').textContent   = selH > 0 ? fmtHours(selH) + ' total' : 'No hours set';
 }
 
 // ---- Toggle done ----
@@ -889,10 +1138,39 @@ function toggleDone(id) {
   }
 }
 
+// ---- Lock / Unlock ----
+function toggleLock() {
+  isLocked = !isLocked;
+  if (isLocked && isSelecting) exitSelectMode();
+  render();
+}
+
+// ---- Select mode ----
+function enterSelectMode() {
+  isSelecting = true;
+  selectedIds.clear();
+  render();
+}
+
+function exitSelectMode() {
+  isSelecting = false;
+  selectedIds.clear();
+  render();
+}
+
+function toggleCardSelect(id) {
+  if (selectedIds.has(id)) selectedIds.delete(id);
+  else selectedIds.add(id);
+  // Re-render just the calc bar and card states efficiently
+  // (full re-render is fine for this size)
+  render();
+}
+
 // ---- Modal ----
 const overlay = document.getElementById('overlay');
 
 function openModal(id = null) {
+  if (isLocked) return;
   editingId = id;
   const entries = load();
   const entry   = id ? entries.find(e => e.id === id) : null;
@@ -906,18 +1184,17 @@ function openModal(id = null) {
     document.getElementById('fCompany').value = entry.company;
     document.getElementById('fRole').value    = entry.role    || '';
     document.getElementById('fAddress').value = entry.address || '';
+    document.getElementById('fHours').value   = entry.hours   || '';
+    document.getElementById('fRate').value    = entry.rate    || '';
     document.getElementById('fNotes').value   = entry.notes   || '';
   } else {
     document.getElementById('shiftForm').reset();
-    const today = new Date();
-    const todayYMVal = today.toISOString().slice(0,7);
-    if (currentYM === todayYMVal) {
-      document.getElementById('fDate').value = today.toISOString().slice(0,10);
-    } else {
-      document.getElementById('fDate').value = currentYM + '-01';
-    }
+    const todayVal = new Date().toISOString().slice(0, 7);
+    document.getElementById('fDate').value =
+      currentYM === todayVal ? todayStr() : currentYM + '-01';
   }
 
+  updateEarnPreview();
   overlay.classList.add('open');
   setTimeout(() => document.getElementById('fCompany').focus(), 360);
 }
@@ -927,16 +1204,37 @@ function closeModal() {
   editingId = null;
 }
 
+function updateEarnPreview() {
+  const h = parseFloat(document.getElementById('fHours').value) || 0;
+  const r = parseFloat(document.getElementById('fRate').value)  || 0;
+  const preview = document.getElementById('earnPreview');
+  const val     = document.getElementById('earnPreviewVal');
+  if (h > 0 && r > 0) {
+    preview.style.display = '';
+    val.textContent = fmtEur(h * r);
+  } else {
+    preview.style.display = 'none';
+  }
+}
+
 // ---- Event listeners ----
 document.getElementById('prevBtn').addEventListener('click', () => {
   currentYM = shiftYM(currentYM, -1);
   render();
 });
-
 document.getElementById('nextBtn').addEventListener('click', () => {
   currentYM = shiftYM(currentYM, 1);
   render();
 });
+
+document.getElementById('lockBtn').addEventListener('click', toggleLock);
+
+document.getElementById('calcBtn').addEventListener('click', () => {
+  if (isSelecting) exitSelectMode();
+  else enterSelectMode();
+});
+
+document.getElementById('calcCancelBtn').addEventListener('click', exitSelectMode);
 
 document.getElementById('fabBtn').addEventListener('click', () => openModal());
 document.getElementById('cancelBtn').addEventListener('click', closeModal);
@@ -946,7 +1244,10 @@ overlay.addEventListener('click', e => {
 });
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeModal();
+  if (e.key === 'Escape') {
+    if (overlay.classList.contains('open')) closeModal();
+    else if (isSelecting) exitSelectMode();
+  }
 });
 
 document.getElementById('deleteBtn').addEventListener('click', () => {
@@ -957,6 +1258,11 @@ document.getElementById('deleteBtn').addEventListener('click', () => {
   render();
 });
 
+// Live earn preview while typing in modal
+['fHours', 'fRate'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateEarnPreview);
+});
+
 document.getElementById('shiftForm').addEventListener('submit', e => {
   e.preventDefault();
 
@@ -964,6 +1270,8 @@ document.getElementById('shiftForm').addEventListener('submit', e => {
   const company = document.getElementById('fCompany').value.trim();
   const role    = document.getElementById('fRole').value.trim();
   const address = document.getElementById('fAddress').value.trim();
+  const hours   = document.getElementById('fHours').value.trim();
+  const rate    = document.getElementById('fRate').value.trim();
   const notes   = document.getElementById('fNotes').value.trim();
 
   if (!date || !company || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
@@ -974,10 +1282,10 @@ document.getElementById('shiftForm').addEventListener('submit', e => {
   if (editingId) {
     const idx = entries.findIndex(e => e.id === editingId);
     if (idx !== -1) {
-      entries[idx] = { ...entries[idx], date, company, role, address, notes };
+      entries[idx] = { ...entries[idx], date, company, role, address, hours, rate, notes };
     }
   } else {
-    entries.push({ id: uid(), date, company, role, address, notes, completed: false });
+    entries.push({ id: uid(), date, company, role, address, hours, rate, notes, completed: false });
   }
 
   save(entries);
