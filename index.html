@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Shifts</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0e1a">
+
+<!-- iOS home screen -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Shifts">
+<link rel="apple-touch-icon" href="icon.svg">
+
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+
+:root {
+  --bg:          #0a0e1a;
+  --surface:     #111827;
+  --surface-2:   #172033;
+  --surface-3:   #1e2c42;
+  --border:      rgba(255,255,255,0.06);
+  --border-2:    rgba(255,255,255,0.11);
+  --accent:      #38bdf8;
+  --accent-dim:  rgba(56,189,248,0.10);
+  --accent-glow: rgba(56,189,248,0.20);
+  --done:        #4ade80;
+  --done-dim:    rgba(74,222,128,0.09);
+  --danger:      #f87171;
+  --danger-dim:  rgba(248,113,113,0.10);
+  --text-1:      #e2e8f0;
+  --text-2:      #7c8fa6;
+  --text-3:      #3d5068;
+  --radius:      18px;
+  --radius-sm:   12px;
+  --radius-xs:   8px;
+  --font:        'Outfit', system-ui, sans-serif;
+  --shadow:      0 8px 32px rgba(0,0,0,0.45);
+}
+
+html {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text-1);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-height: 100dvh;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 0 16px calc(96px + env(safe-area-inset-bottom));
+  position: relative;
+}
+
+/* ---- HEADER ---- */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  padding: 20px 0 0;
+  background: linear-gradient(to bottom, var(--bg) 80%, transparent);
+}
+
+.brand-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+
+.brand-name {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.today-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+  letter-spacing: 0.05em;
+}
+
+.month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.month-display {
+  flex: 1;
+  text-align: center;
+}
+
+.month-label {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text-1);
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.nav-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid var(--border-2);
+  background: var(--surface);
+  color: var(--text-2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.12s;
+  flex-shrink: 0;
+}
+
+.nav-btn:hover { background: var(--surface-2); color: var(--text-1); border-color: var(--border-2); }
+.nav-btn:active { transform: scale(0.92); }
+
+/* Progress bar */
+.progress-track {
+  height: 3px;
+  background: var(--surface-3);
+  border-radius: 2px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--done));
+  border-radius: 2px;
+  transition: width 0.4s cubic-bezier(0.16,1,0.3,1);
+}
+
+/* Stats */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 10px;
+  text-align: center;
+  transition: border-color 0.2s;
+}
+
+.stat-card:hover { border-color: var(--border-2); }
+
+.stat-value {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 5px;
+  letter-spacing: -0.5px;
+}
+
+.stat-value.accent { color: var(--accent); }
+.stat-value.done   { color: var(--done);   }
+.stat-value.plain  { color: var(--text-1); }
+
+.stat-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--text-3);
+}
+
+/* ---- ENTRY LIST ---- */
+.section-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-3);
+  margin-bottom: 10px;
+  margin-top: 4px;
+}
+
+.entry-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Empty state */
+.empty-state {
+  padding: 64px 20px;
+  text-align: center;
+  color: var(--text-3);
+}
+
+.empty-icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+  opacity: 0.35;
+}
+
+.empty-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-2);
+  margin-bottom: 6px;
+}
+
+.empty-sub {
+  font-size: 13px;
+  color: var(--text-3);
+}
+
+/* ---- ENTRY CARD ---- */
+.entry-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 14px 14px 14px;
+  display: grid;
+  grid-template-columns: 58px 1fr 44px;
+  gap: 12px;
+  align-items: center;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.18s, border-color 0.18s, transform 0.12s;
+  animation: cardIn 0.22s ease both;
+}
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entry-card { animation: none; }
+  .progress-fill { transition: none; }
+  .nav-btn, .check-btn, .fab { transition: none; }
+}
+
+.entry-card:hover {
+  background: var(--surface-2);
+  border-color: var(--border-2);
+}
+
+.entry-card:active { transform: scale(0.99); }
+
+.entry-card.completed {
+  border-color: rgba(74,222,128,0.13);
+  background: rgba(74,222,128,0.03);
+}
+
+.entry-card.is-today {
+  border-color: rgba(56,189,248,0.22);
+  background: rgba(56,189,248,0.04);
+}
+
+/* Date bubble */
+.date-bubble {
+  width: 58px;
+  height: 64px;
+  border-radius: 12px;
+  background: var(--surface-3);
+  border: 1px solid var(--border-2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, border-color 0.2s;
+  flex-shrink: 0;
+}
+
+.entry-card.completed .date-bubble {
+  background: var(--done-dim);
+  border-color: rgba(74,222,128,0.18);
+}
+
+.entry-card.is-today .date-bubble {
+  background: var(--accent-dim);
+  border-color: rgba(56,189,248,0.25);
+}
+
+.date-num {
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--text-1);
+  letter-spacing: -0.5px;
+}
+
+.entry-card.completed .date-num { color: var(--done); }
+.entry-card.is-today .date-num  { color: var(--accent); }
+
+.date-wd {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-3);
+  margin-top: 3px;
+}
+
+.entry-card.completed .date-wd { color: rgba(74,222,128,0.45); }
+.entry-card.is-today  .date-wd { color: rgba(56,189,248,0.55); }
+
+/* Entry body */
+.entry-body { min-width: 0; }
+
+.entry-company {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+  margin-bottom: 3px;
+}
+
+.entry-card.completed .entry-company { color: var(--text-2); }
+
+.entry-role {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 5px;
+}
+
+.entry-card.completed .entry-role { color: var(--text-3); }
+
+.entry-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.entry-address {
+  font-size: 11.5px;
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+/* Check button */
+.check-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1.8px solid var(--border-2);
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.18s, border-color 0.18s, transform 0.12s;
+  color: var(--text-3);
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.check-btn:hover {
+  border-color: var(--done);
+  color: var(--done);
+  background: var(--done-dim);
+}
+
+.check-btn:active { transform: scale(0.88); }
+
+.entry-card.completed .check-btn {
+  border-color: var(--done);
+  color: var(--done);
+  background: var(--done-dim);
+}
+
+/* Today pill */
+.today-pill {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  background: var(--accent);
+  color: #0a0e1a;
+  border-radius: 4px;
+  padding: 2px 5px;
+  margin-left: 6px;
+  vertical-align: middle;
+  line-height: 1.4;
+}
+
+/* ---- FAB ---- */
+.fab {
+  position: fixed;
+  right: max(24px, calc(50% - 320px + 24px));
+  bottom: calc(28px + env(safe-area-inset-bottom));
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 28px rgba(56,189,248,0.38);
+  transition: transform 0.18s, box-shadow 0.18s;
+  z-index: 100;
+}
+
+.fab:hover {
+  transform: scale(1.07);
+  box-shadow: 0 10px 36px rgba(56,189,248,0.50);
+}
+
+.fab:active { transform: scale(0.93); }
+
+/* ---- MODAL ---- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease;
+}
+
+.overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.modal {
+  background: var(--surface-2);
+  border: 1px solid var(--border-2);
+  border-radius: 24px 24px 0 0;
+  padding: 12px 20px calc(32px + env(safe-area-inset-bottom));
+  width: 100%;
+  max-width: 640px;
+  max-height: 90dvh;
+  overflow-y: auto;
+  transform: translateY(110%);
+  transition: transform 0.32s cubic-bezier(0.16,1,0.3,1);
+  overscroll-behavior: contain;
+}
+
+.overlay.open .modal {
+  transform: translateY(0);
+}
+
+.modal-handle {
+  width: 40px;
+  height: 4px;
+  background: var(--border-2);
+  border-radius: 2px;
+  margin: 0 auto 20px;
+}
+
+.modal-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-1);
+  letter-spacing: -0.3px;
+  margin-bottom: 22px;
+}
+
+/* Form */
+.form-group { margin-bottom: 14px; }
+
+.form-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--text-3);
+  margin-bottom: 7px;
+}
+
+.form-input {
+  width: 100%;
+  background: var(--surface-3);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-1);
+  outline: none;
+  transition: border-color 0.18s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.form-input:focus { border-color: var(--accent); }
+
+.form-input::placeholder { color: var(--text-3); }
+
+/* Color scheme for date input on webkit */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.5);
+  cursor: pointer;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.btn {
+  flex: 1;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  border: none;
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.12s;
+}
+
+.btn:active { transform: scale(0.97); }
+
+.btn-primary {
+  background: var(--accent);
+  color: #0a0e1a;
+}
+
+.btn-primary:hover { opacity: 0.88; }
+
+.btn-ghost {
+  background: var(--surface-3);
+  color: var(--text-2);
+  border: 1px solid var(--border-2);
+}
+
+.btn-ghost:hover { color: var(--text-1); background: var(--surface-3); opacity: 0.85; }
+
+.btn-danger {
+  width: 100%;
+  margin-top: 10px;
+  background: var(--danger-dim);
+  color: var(--danger);
+  border: 1px solid rgba(248,113,113,0.18);
+  flex: none;
+}
+
+.btn-danger:hover { background: rgba(248,113,113,0.16); }
+
+/* Scroll */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 4px; }
+
+/* ---- RESPONSIVE ---- */
+@media (max-width: 420px) {
+  body { padding: 0 12px calc(90px + env(safe-area-inset-bottom)); }
+  .month-label { font-size: 22px; }
+  .stat-value  { font-size: 22px; }
+  .modal       { padding: 12px 14px calc(28px + env(safe-area-inset-bottom)); }
+  .entry-card  { grid-template-columns: 52px 1fr 40px; gap: 10px; padding: 12px; }
+  .date-bubble { width: 52px; height: 58px; }
+  .date-num    { font-size: 21px; }
+  .form-row    { grid-template-columns: 1fr; }
+}
+
+@media (min-width: 641px) {
+  .fab { right: calc(50% - 320px + 24px); }
+}
+</style>
+</head>
+<body>
+
+<!-- ======= HEADER ======= -->
+<div class="app-header">
+  <div class="brand-row">
+    <span class="brand-name">Shifts</span>
+    <span class="today-badge" id="todayBadge"></span>
+  </div>
+
+  <div class="month-nav">
+    <button class="nav-btn" id="prevBtn" aria-label="Previous month">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M10 12.5L5.5 8 10 3.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <div class="month-display">
+      <div class="month-label" id="monthLabel"></div>
+    </div>
+    <button class="nav-btn" id="nextBtn" aria-label="Next month">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M6 3.5L10.5 8 6 12.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="progress-track">
+    <div class="progress-fill" id="progressFill" style="width:0%"></div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-value accent" id="statTotal">0</div>
+      <div class="stat-label">Shifts</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value done" id="statDone">0</div>
+      <div class="stat-label">Done</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value plain" id="statLeft">0</div>
+      <div class="stat-label">Upcoming</div>
+    </div>
+  </div>
+</div>
+
+<!-- ======= ENTRY LIST ======= -->
+<div class="entry-list" id="entryList" role="list"></div>
+
+<!-- ======= FAB ======= -->
+<button class="fab" id="fabBtn" aria-label="Add a shift">
+  <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+    <path d="M11 3v16M3 11h16" stroke="#0a0e1a" stroke-width="2.4" stroke-linecap="round"/>
+  </svg>
+</button>
+
+<!-- ======= MODAL ======= -->
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal" id="modal">
+    <div class="modal-handle" aria-hidden="true"></div>
+    <div class="modal-title" id="modalTitle">Add Shift</div>
+
+    <form id="shiftForm" novalidate autocomplete="off">
+
+      <div class="form-group">
+        <label class="form-label" for="fDate">Date</label>
+        <input class="form-input" type="date" id="fDate" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="fCompany">Company</label>
+        <input class="form-input" type="text" id="fCompany" placeholder="Company or employer name" maxlength="80" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="fRole">Position / Role</label>
+        <input class="form-input" type="text" id="fRole" placeholder="Your role or job title" maxlength="60">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="fAddress">Location / Address</label>
+        <input class="form-input" type="text" id="fAddress" placeholder="Work site address" maxlength="100">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="fNotes">Notes</label>
+        <input class="form-input" type="text" id="fNotes" placeholder="Anything else (hours, contact, etc.)" maxlength="120">
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="cancelBtn">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="saveBtn">Save Shift</button>
+      </div>
+
+      <div id="deleteRow" hidden>
+        <button type="button" class="btn btn-danger" id="deleteBtn">Remove this Shift</button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<!-- ======= SCRIPT ======= -->
+<script>
+'use strict';
+
+// ---- Constants ----
+const STORAGE_KEY = 'shifts-data-v1';
+const WEEKDAYS    = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTHS      = ['January','February','March','April','May','June',
+                     'July','August','September','October','November','December'];
+
+// ---- State ----
+let currentYM  = todayYM();
+let editingId  = null;
+
+// ---- Helpers ----
+function todayStr() {
+  const d = new Date();
+  return d.toISOString().slice(0,10);
+}
+
+function todayYM() {
+  return todayStr().slice(0,7);
+}
+
+function ymLabel(ym) {
+  const parts = (ym || '').split('-');
+  const y = Number(parts[0]);
+  const m = Number(parts[1]);
+  const name = MONTHS[m - 1];
+  return (name && y) ? name + ' ' + y : 'Invalid Date';
+}
+
+function shiftYM(ym, delta) {
+  let [y,m] = ym.split('-').map(Number);
+  m += delta;
+  if (m > 12) { m = 1;  y++; }
+  if (m <  1) { m = 12; y--; }
+  return y + '-' + String(m).padStart(2,'0');
+}
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2,5);
+}
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+// ---- Storage ----
+function load() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch { return []; }
+}
+
+function save(entries) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+}
+
+// ---- Render ----
+function render() {
+  const all      = load();
+  const filtered = all.filter(e => e.date.startsWith(currentYM))
+                      .sort((a,b) => a.date.localeCompare(b.date));
+  const today    = todayStr();
+
+  // Header
+  document.getElementById('monthLabel').textContent = ymLabel(currentYM);
+
+  const d    = new Date();
+  const opts = { weekday:'short', month:'short', day:'numeric' };
+  document.getElementById('todayBadge').textContent =
+    d.toLocaleDateString('en-AU', opts);
+
+  // Stats
+  const total = filtered.length;
+  const done  = filtered.filter(e => e.completed).length;
+  const left  = total - done;
+  const pct   = total > 0 ? Math.round((done / total) * 100) : 0;
+
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statDone').textContent  = done;
+  document.getElementById('statLeft').textContent  = left;
+  document.getElementById('progressFill').style.width = pct + '%';
+
+  // List
+  const list = document.getElementById('entryList');
+  list.innerHTML = '';
+
+  if (filtered.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state" role="status">
+        <div class="empty-icon">
+          <svg width="52" height="52" viewBox="0 0 52 52" fill="none" aria-hidden="true">
+            <rect x="8" y="12" width="36" height="32" rx="5" stroke="#3d5068" stroke-width="2"/>
+            <path d="M18 8v8M34 8v8" stroke="#3d5068" stroke-width="2" stroke-linecap="round"/>
+            <path d="M8 24h36" stroke="#3d5068" stroke-width="2" stroke-linecap="round"/>
+            <path d="M18 33h16M18 38h10" stroke="#3d5068" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="empty-title">No shifts for ${ymLabel(currentYM)}</div>
+        <div class="empty-sub">Tap the + button to add your first shift</div>
+      </div>`;
+    return;
+  }
+
+  filtered.forEach((entry, i) => {
+    const [,, day] = entry.date.split('-');
+    const dateObj  = new Date(entry.date + 'T12:00:00');
+    const wd       = WEEKDAYS[dateObj.getDay()];
+    const isToday  = entry.date === today;
+
+    const card = document.createElement('div');
+    card.className = 'entry-card' +
+      (entry.completed ? ' completed' : '') +
+      (isToday         ? ' is-today'  : '');
+    card.setAttribute('role', 'listitem');
+    card.style.animationDelay = (i * 0.04) + 's';
+
+    card.innerHTML = `
+      <div class="date-bubble" aria-hidden="true">
+        <span class="date-num">${parseInt(day,10)}</span>
+        <span class="date-wd">${wd}</span>
+      </div>
+      <div class="entry-body">
+        <div class="entry-company">
+          ${esc(entry.company)}${isToday ? '<span class="today-pill">Today</span>' : ''}
+        </div>
+        ${entry.role ? `<div class="entry-role">${esc(entry.role)}</div>` : ''}
+        <div class="entry-meta">
+          ${entry.address ? `
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true" style="flex-shrink:0">
+              <path d="M6 1a3.5 3.5 0 0 0-3.5 3.5C2.5 7.5 6 11 6 11s3.5-3.5 3.5-6.5A3.5 3.5 0 0 0 6 1zm0 4.75a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z" fill="#3d5068"/>
+            </svg>
+            <span class="entry-address">${esc(entry.address)}</span>
+          ` : ''}
+          ${entry.notes && !entry.address ? `
+            <span class="entry-address" style="font-style:italic;">${esc(entry.notes)}</span>
+          ` : ''}
+        </div>
+      </div>
+      <button class="check-btn"
+              data-id="${entry.id}"
+              aria-label="${entry.completed ? 'Mark as incomplete' : 'Mark as done'}">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+          <path d="M2.5 7.5l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    `;
+
+    card.addEventListener('click', e => {
+      if (e.target.closest('.check-btn')) return;
+      openModal(entry.id);
+    });
+
+    list.appendChild(card);
+  });
+
+  // Attach check buttons
+  list.querySelectorAll('.check-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      toggleDone(btn.dataset.id);
+    });
+  });
+}
+
+// ---- Toggle done ----
+function toggleDone(id) {
+  const entries = load();
+  const idx = entries.findIndex(e => e.id === id);
+  if (idx !== -1) {
+    entries[idx].completed = !entries[idx].completed;
+    save(entries);
+    render();
+  }
+}
+
+// ---- Modal ----
+const overlay = document.getElementById('overlay');
+
+function openModal(id = null) {
+  editingId = id;
+  const entries = load();
+  const entry   = id ? entries.find(e => e.id === id) : null;
+
+  document.getElementById('modalTitle').textContent = id ? 'Edit Shift' : 'Add Shift';
+  document.getElementById('saveBtn').textContent    = id ? 'Save Changes' : 'Save Shift';
+  document.getElementById('deleteRow').hidden       = !id;
+
+  if (entry) {
+    document.getElementById('fDate').value    = entry.date;
+    document.getElementById('fCompany').value = entry.company;
+    document.getElementById('fRole').value    = entry.role    || '';
+    document.getElementById('fAddress').value = entry.address || '';
+    document.getElementById('fNotes').value   = entry.notes   || '';
+  } else {
+    document.getElementById('shiftForm').reset();
+    const today = new Date();
+    const todayYMVal = today.toISOString().slice(0,7);
+    if (currentYM === todayYMVal) {
+      document.getElementById('fDate').value = today.toISOString().slice(0,10);
+    } else {
+      document.getElementById('fDate').value = currentYM + '-01';
+    }
+  }
+
+  overlay.classList.add('open');
+  setTimeout(() => document.getElementById('fCompany').focus(), 360);
+}
+
+function closeModal() {
+  overlay.classList.remove('open');
+  editingId = null;
+}
+
+// ---- Event listeners ----
+document.getElementById('prevBtn').addEventListener('click', () => {
+  currentYM = shiftYM(currentYM, -1);
+  render();
+});
+
+document.getElementById('nextBtn').addEventListener('click', () => {
+  currentYM = shiftYM(currentYM, 1);
+  render();
+});
+
+document.getElementById('fabBtn').addEventListener('click', () => openModal());
+document.getElementById('cancelBtn').addEventListener('click', closeModal);
+
+overlay.addEventListener('click', e => {
+  if (e.target === overlay) closeModal();
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
+
+document.getElementById('deleteBtn').addEventListener('click', () => {
+  if (!editingId) return;
+  const entries = load().filter(e => e.id !== editingId);
+  save(entries);
+  closeModal();
+  render();
+});
+
+document.getElementById('shiftForm').addEventListener('submit', e => {
+  e.preventDefault();
+
+  const date    = document.getElementById('fDate').value.trim();
+  const company = document.getElementById('fCompany').value.trim();
+  const role    = document.getElementById('fRole').value.trim();
+  const address = document.getElementById('fAddress').value.trim();
+  const notes   = document.getElementById('fNotes').value.trim();
+
+  if (!date || !company || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+  if (isNaN(new Date(date + 'T12:00:00').getTime())) return;
+
+  const entries = load();
+
+  if (editingId) {
+    const idx = entries.findIndex(e => e.id === editingId);
+    if (idx !== -1) {
+      entries[idx] = { ...entries[idx], date, company, role, address, notes };
+    }
+  } else {
+    entries.push({ id: uid(), date, company, role, address, notes, completed: false });
+  }
+
+  save(entries);
+  const ym = date.slice(0, 7);
+  if (/^\d{4}-\d{2}$/.test(ym)) currentYM = ym;
+  closeModal();
+  render();
+});
+
+// ---- Boot ----
+render();
+
+// ---- Service Worker ----
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
