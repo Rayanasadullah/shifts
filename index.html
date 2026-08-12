@@ -234,12 +234,71 @@ body {
 }
 
 /* ---- ENTRY LIST ---- */
-.entry-list { display: flex; flex-direction: column; gap: 8px; }
+.entry-list { display: flex; flex-direction: column; gap: 6px; }
 
-.empty-state { padding: 64px 20px; text-align: center; }
-.empty-icon  { display: flex; justify-content: center; margin-bottom: 16px; opacity: 0.3; }
-.empty-title { font-size: 16px; font-weight: 600; color: var(--text-2); margin-bottom: 6px; }
-.empty-sub   { font-size: 13px; color: var(--text-3); }
+/* ---- FREE DAY ---- */
+.free-day {
+  display: grid;
+  grid-template-columns: 58px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: transparent;
+  transition: background 0.15s, border-color 0.15s;
+  cursor: default;
+}
+
+.free-day.clickable { cursor: pointer; }
+.free-day.clickable:hover {
+  background: var(--surface);
+  border-color: var(--border-2);
+}
+.free-day.clickable:active { transform: scale(0.995); }
+
+.free-day .date-bubble {
+  height: 50px;
+  background: transparent;
+  border-color: var(--border);
+}
+
+.free-day .date-num { font-size: 20px; color: var(--text-3); }
+.free-day .date-wd  { color: var(--text-3); opacity: 0.6; }
+
+.free-day.is-today .date-bubble {
+  background: var(--accent-dim);
+  border-color: rgba(56,189,248,0.25);
+}
+.free-day.is-today .date-num { color: var(--accent); }
+
+.free-day.is-weekend .date-num { color: var(--text-2); }
+.free-day.is-weekend .date-wd  { opacity: 0.8; }
+
+.free-day.past .date-num { opacity: 0.45; }
+.free-day.past .date-wd  { opacity: 0.3; }
+
+.free-content { display: flex; align-items: center; justify-content: space-between; }
+
+.free-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-3);
+}
+
+.free-day.is-today .free-label { color: var(--accent); font-weight: 600; }
+.free-day.is-weekend .free-label { color: var(--text-2); }
+.free-day.past .free-label { opacity: 0.45; }
+
+.free-add-hint {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+  letter-spacing: 0.05em;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.free-day.clickable:hover .free-add-hint { opacity: 1; }
 
 /* ---- ENTRY CARD ---- */
 .entry-card {
@@ -705,6 +764,9 @@ input[type="number"]::-webkit-outer-spin-button { opacity: 0.4; }
   .date-bubble { width: 52px; height: 58px; }
   .date-num    { font-size: 21px; }
   .form-row    { grid-template-columns: 1fr; }
+  .free-day    { grid-template-columns: 52px 1fr; padding: 10px 12px; }
+  .free-day .date-bubble { width: 52px; }
+  .free-day .date-num    { font-size: 18px; }
 }
 
 @media (min-width: 641px) {
@@ -925,6 +987,16 @@ function shiftYM(ym, delta) {
 }
 
 function uid()  { return Date.now().toString(36) + Math.random().toString(36).slice(2, 5); }
+
+function getDaysInMonth(ym) {
+  const [y, m] = ym.split('-').map(Number);
+  const count  = new Date(y, m, 0).getDate();
+  const days   = [];
+  for (let d = 1; d <= count; d++) {
+    days.push(ym + '-' + String(d).padStart(2, '0'));
+  }
+  return days;
+}
 function esc(s) {
   return String(s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
@@ -1000,103 +1072,131 @@ function render() {
   // Update calc bar
   updateCalcBar();
 
-  // Entry list
+  // Build lookup of entries by date
+  const byDate = {};
+  filtered.forEach(e => { byDate[e.date] = e; });
+
+  // All days of current month
+  const allDays = getDaysInMonth(currentYM);
+
   const list = document.getElementById('entryList');
   list.innerHTML = '';
 
-  if (filtered.length === 0) {
-    list.innerHTML = `
-      <div class="empty-state" role="status">
-        <div class="empty-icon">
-          <svg width="52" height="52" viewBox="0 0 52 52" fill="none" aria-hidden="true">
-            <rect x="8" y="12" width="36" height="32" rx="5" stroke="#3d5068" stroke-width="2"/>
-            <path d="M18 8v8M34 8v8" stroke="#3d5068" stroke-width="2" stroke-linecap="round"/>
-            <path d="M8 24h36" stroke="#3d5068" stroke-width="2" stroke-linecap="round"/>
-            <path d="M18 33h16M18 38h10" stroke="#3d5068" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <div class="empty-title">No shifts for ${ymLabel(currentYM)}</div>
-        <div class="empty-sub">${isLocked ? 'Tap the lock icon to unlock and add shifts' : 'Tap + to add your first shift'}</div>
-      </div>`;
-    return;
-  }
-
-  filtered.forEach((entry, i) => {
-    const [,, day] = entry.date.split('-');
-    const dateObj  = new Date(entry.date + 'T12:00:00');
+  allDays.forEach((dateStr, i) => {
+    const [,, day] = dateStr.split('-');
+    const dateObj  = new Date(dateStr + 'T12:00:00');
     const wd       = WEEKDAYS[dateObj.getDay()];
-    const isToday  = entry.date === today;
-    const isSel    = selectedIds.has(entry.id);
+    const isToday  = dateStr === today;
+    const isPast   = dateStr < today;
+    const isWeekend= dateObj.getDay() === 0 || dateObj.getDay() === 6;
+    const entry    = byDate[dateStr];
 
-    const h = parseFloat(entry.hours) || 0;
-    const r = parseFloat(entry.rate)  || 0;
-    const earn = h * r;
+    if (entry) {
+      // ---- WORK DAY CARD ----
+      const isSel = selectedIds.has(entry.id);
+      const h = parseFloat(entry.hours) || 0;
+      const r = parseFloat(entry.rate)  || 0;
+      const earn = h * r;
 
-    // Build earn chips
-    let earnHTML = '';
-    if (h > 0 || r > 0) {
-      earnHTML = '<div class="entry-earn">';
-      if (h > 0) earnHTML += `<span class="earn-chip"><svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.3"/><path d="M6 3.5v2.5l1.5 1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>${fmtHours(h)}</span>`;
-      if (r > 0) earnHTML += `<span class="earn-chip">€${r.toFixed(2)}/h</span>`;
-      if (h > 0 && r > 0) earnHTML += `<span class="earn-chip earn-total">${fmtEur(earn)}</span>`;
-      earnHTML += '</div>';
-    }
+      let earnHTML = '';
+      if (h > 0 || r > 0) {
+        earnHTML = '<div class="entry-earn">';
+        if (h > 0) earnHTML += `<span class="earn-chip"><svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.3"/><path d="M6 3.5v2.5l1.5 1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>${fmtHours(h)}</span>`;
+        if (r > 0) earnHTML += `<span class="earn-chip">€${r.toFixed(2)}/h</span>`;
+        if (h > 0 && r > 0) earnHTML += `<span class="earn-chip earn-total">${fmtEur(earn)}</span>`;
+        earnHTML += '</div>';
+      }
 
-    let classes = 'entry-card';
-    if (entry.completed) classes += ' completed';
-    if (isToday)         classes += ' is-today';
-    if (isSel)           classes += ' card-selected';
-    if (isSelecting)     classes += ' selectable';
-    else if (!isLocked)  classes += ' editable';
+      let classes = 'entry-card';
+      if (entry.completed) classes += ' completed';
+      if (isToday)         classes += ' is-today';
+      if (isSel)           classes += ' card-selected';
+      if (isSelecting)     classes += ' selectable';
+      else if (!isLocked)  classes += ' editable';
 
-    const card = document.createElement('div');
-    card.className = classes;
-    card.setAttribute('role', 'listitem');
-    card.style.animationDelay = (i * 0.04) + 's';
-    card.dataset.id = entry.id;
+      const card = document.createElement('div');
+      card.className = classes;
+      card.setAttribute('role', 'listitem');
+      card.style.animationDelay = (i * 0.02) + 's';
+      card.dataset.id = entry.id;
 
-    card.innerHTML = `
-      <div class="date-bubble" aria-hidden="true">
-        <span class="date-num">${parseInt(day, 10)}</span>
-        <span class="date-wd">${wd}</span>
-        <div class="select-tick">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M3 7l3 3 5-5" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
-      </div>
-      <div class="entry-body">
-        <div class="entry-company">
-          ${esc(entry.company)}${isToday ? '<span class="today-pill">Today</span>' : ''}
-        </div>
-        ${entry.role ? `<div class="entry-role">${esc(entry.role)}</div>` : ''}
-        <div class="entry-meta">
-          ${entry.address ? `
-            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true" style="flex-shrink:0">
-              <path d="M6 1a3.5 3.5 0 0 0-3.5 3.5C2.5 7.5 6 11 6 11s3.5-3.5 3.5-6.5A3.5 3.5 0 0 0 6 1zm0 4.75a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z" fill="#3d5068"/>
+      card.innerHTML = `
+        <div class="date-bubble" aria-hidden="true">
+          <span class="date-num">${parseInt(day, 10)}</span>
+          <span class="date-wd">${wd}</span>
+          <div class="select-tick">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M3 7l3 3 5-5" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            <span class="entry-address">${esc(entry.address)}</span>
-          ` : (entry.notes ? `<span class="entry-address" style="font-style:italic">${esc(entry.notes)}</span>` : '')}
+          </div>
         </div>
-        ${earnHTML}
-      </div>
-      <button class="check-btn"
-              data-id="${entry.id}"
-              aria-label="${entry.completed ? 'Mark incomplete' : 'Mark done'}">
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
-          <path d="M2.5 7.5l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
-    `;
+        <div class="entry-body">
+          <div class="entry-company">
+            ${esc(entry.company)}${isToday ? '<span class="today-pill">Today</span>' : ''}
+          </div>
+          ${entry.role ? `<div class="entry-role">${esc(entry.role)}</div>` : ''}
+          <div class="entry-meta">
+            ${entry.address ? `
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true" style="flex-shrink:0">
+                <path d="M6 1a3.5 3.5 0 0 0-3.5 3.5C2.5 7.5 6 11 6 11s3.5-3.5 3.5-6.5A3.5 3.5 0 0 0 6 1zm0 4.75a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z" fill="#3d5068"/>
+              </svg>
+              <span class="entry-address">${esc(entry.address)}</span>
+            ` : (entry.notes ? `<span class="entry-address" style="font-style:italic">${esc(entry.notes)}</span>` : '')}
+          </div>
+          ${earnHTML}
+        </div>
+        <button class="check-btn"
+                data-id="${entry.id}"
+                aria-label="${entry.completed ? 'Mark incomplete' : 'Mark done'}">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+            <path d="M2.5 7.5l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      `;
 
-    // Card click: edit (unlocked) or select (selecting)
-    card.addEventListener('click', e => {
-      if (e.target.closest('.check-btn')) return;
-      if (isSelecting) { toggleCardSelect(entry.id); return; }
-      if (!isLocked)   { openModal(entry.id); }
-    });
+      card.addEventListener('click', e => {
+        if (e.target.closest('.check-btn')) return;
+        if (isSelecting) { toggleCardSelect(entry.id); return; }
+        if (!isLocked)   { openModal(entry.id); }
+      });
 
-    list.appendChild(card);
+      list.appendChild(card);
+
+    } else {
+      // ---- FREE DAY ----
+      if (isSelecting) return; // hide free days in select mode
+
+      let classes = 'free-day';
+      if (isToday)   classes += ' is-today';
+      if (isWeekend) classes += ' is-weekend';
+      if (isPast)    classes += ' past';
+      if (!isLocked) classes += ' clickable';
+
+      const freeLabel = isToday ? 'Free - Today' : (isWeekend ? 'Weekend' : 'Free');
+
+      const row = document.createElement('div');
+      row.className = classes;
+      row.setAttribute('role', 'listitem');
+      row.style.animationDelay = (i * 0.02) + 's';
+      row.dataset.date = dateStr;
+
+      row.innerHTML = `
+        <div class="date-bubble" aria-hidden="true">
+          <span class="date-num">${parseInt(day, 10)}</span>
+          <span class="date-wd">${wd}</span>
+        </div>
+        <div class="free-content">
+          <span class="free-label">${freeLabel}</span>
+          ${!isLocked ? '<span class="free-add-hint">+ Add shift</span>' : ''}
+        </div>
+      `;
+
+      if (!isLocked) {
+        row.addEventListener('click', () => openModalForDate(dateStr));
+      }
+
+      list.appendChild(row);
+    }
   });
 
   // Check buttons - always active regardless of lock
@@ -1194,6 +1294,19 @@ function openModal(id = null) {
       currentYM === todayVal ? todayStr() : currentYM + '-01';
   }
 
+  updateEarnPreview();
+  overlay.classList.add('open');
+  setTimeout(() => document.getElementById('fCompany').focus(), 360);
+}
+
+function openModalForDate(dateStr) {
+  if (isLocked) return;
+  editingId = null;
+  document.getElementById('modalTitle').textContent = 'Add Shift';
+  document.getElementById('saveBtn').textContent    = 'Save Shift';
+  document.getElementById('deleteRow').hidden       = true;
+  document.getElementById('shiftForm').reset();
+  document.getElementById('fDate').value = dateStr;
   updateEarnPreview();
   overlay.classList.add('open');
   setTimeout(() => document.getElementById('fCompany').focus(), 360);
