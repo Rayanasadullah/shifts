@@ -44,6 +44,10 @@
   --font:        'Outfit', system-ui, sans-serif;
 }
 
+html, body {
+  height: 100%;
+}
+
 html {
   font-family: var(--font);
   background: var(--bg);
@@ -53,20 +57,31 @@ html {
 }
 
 body {
-  min-height: 100dvh;
+  height: 100dvh;
   max-width: 640px;
   margin: 0 auto;
-  padding: 0 16px calc(96px + env(safe-area-inset-bottom));
-  position: relative;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* only the inner scroll-area scrolls */
 }
 
-/* ---- HEADER ---- */
+/* ---- HEADER (always visible, never scrolls away) ---- */
 .app-header {
-  position: sticky;
-  top: 0;
+  flex-shrink: 0;
+  padding: 16px 16px 0;
+  background: var(--bg);
   z-index: 50;
-  padding: 20px 0 0;
-  background: linear-gradient(to bottom, var(--bg) 82%, transparent);
+}
+
+/* ---- SCROLLABLE LIST AREA ---- */
+.scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: 0 16px calc(100px + env(safe-area-inset-bottom));
 }
 
 .brand-row {
@@ -756,7 +771,8 @@ input[type="number"]::-webkit-outer-spin-button { opacity: 0.4; }
 
 /* ---- RESPONSIVE ---- */
 @media (max-width: 420px) {
-  body { padding: 0 12px calc(90px + env(safe-area-inset-bottom)); }
+  .app-header  { padding: 12px 12px 0; }
+  .scroll-area { padding: 0 12px calc(90px + env(safe-area-inset-bottom)); }
   .month-label { font-size: 22px; }
   .stat-value  { font-size: 20px; }
   .modal       { padding: 12px 14px calc(28px + env(safe-area-inset-bottom)); }
@@ -770,7 +786,7 @@ input[type="number"]::-webkit-outer-spin-button { opacity: 0.4; }
 }
 
 @media (min-width: 641px) {
-  .fab { right: calc(50% - 320px + 24px); }
+  .fab      { right: calc(50% - 320px + 24px); }
   .calc-bar { left: calc(50% - 320px); right: calc(50% - 320px); }
 }
 </style>
@@ -865,8 +881,10 @@ input[type="number"]::-webkit-outer-spin-button { opacity: 0.4; }
   </div>
 </div>
 
-<!-- ======= ENTRY LIST ======= -->
-<div class="entry-list" id="entryList" role="list"></div>
+<!-- ======= SCROLLABLE CONTENT ======= -->
+<div class="scroll-area">
+  <div class="entry-list" id="entryList" role="list"></div>
+</div>
 
 <!-- ======= FAB ======= -->
 <button class="fab hidden" id="fabBtn" aria-label="Add a shift">
